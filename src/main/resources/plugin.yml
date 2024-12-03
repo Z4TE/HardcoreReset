@@ -1,0 +1,4 @@
+name: Hardcore-Reset
+version: '${project.version}'
+main: net.z4te.reset.Main
+api-version: '1.21'
