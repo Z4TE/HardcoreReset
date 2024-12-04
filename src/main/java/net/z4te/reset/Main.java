@@ -4,7 +4,6 @@ import net.md_5.bungee.api.ChatColor;
 import org.bukkit.Bukkit;
 
 import org.bukkit.World;
-import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.PlayerDeathEvent;
@@ -46,31 +45,15 @@ public final class Main extends JavaPlugin implements Listener {
         if (getServer().isHardcore()) {
             String cause = event.getDeathMessage();
 
-            // 死者の表示名をDeadに変更
-            event.getEntity().setDisplayName(ChatColor.GRAY + "Dead");
-
             // 死者がエンドにいた場合はstopしない
-            if (event.getEntity().getWorld().getEnvironment() != World.Environment.THE_END){
+            if (event.getEntity().getWorld().getEnvironment() == World.Environment.THE_END){
                 Bukkit.getOnlinePlayers().forEach(player -> player.sendMessage(ChatColor.YELLOW + "[Suspended] " + cause));
                 causeList.add(cause);
             } else {
                 causeList.add(cause);
-
-                //全員Deadになったらstop
-                if (allDead()) {
-                    shutdownSequence(causeList);
-                }
+                shutdownSequence(causeList);
             }
         }
-    }
-
-    private boolean allDead() {
-        for (Player player : Bukkit.getOnlinePlayers()) {
-            if (!player.getDisplayName().contains("Dead")) {
-                return false;
-            }
-        }
-        return true;
     }
 
     private void shutdownSequence(ArrayList<String> causes) {
