@@ -26,13 +26,11 @@ public final class Main extends JavaPlugin implements Listener {
         // Plugin startup logic
 
         if (motd == null) {
-            // Set the default motd
             Bukkit.getServer().setMotd(ChatColor.WHITE + "Edit motd in config.yml");
         } else {
             assert displayMotd != null;
             Bukkit.getServer().setMotd(displayMotd);
         }
-
         getServer().getPluginManager().registerEvents(this, this);
     }
 
@@ -43,35 +41,32 @@ public final class Main extends JavaPlugin implements Listener {
 
     @EventHandler
     public void onPlayerDeath(PlayerDeathEvent event) {
-        // Execute when a player dies in hardcore mode
 
+        // プレイヤーがハードコアモードで死んだ場合に実行
         if (getServer().isHardcore()) {
             String cause = event.getDeathMessage();
 
-            if (isEveryoneInTheEnd() || isEveryoneAlive()){
-                Bukkit.broadcastMessage(ChatColor.YELLOW + "[Suspended] " + cause);
-                causeList.add(cause + "\n");
+            // 死者の表示名をDeadに変更
+            event.getEntity().setDisplayName(ChatColor.GRAY + "Dead");
+
+            // 死者がエンドにいた場合はstopしない
+            if (event.getEntity().getWorld().getEnvironment() != World.Environment.THE_END){
+                Bukkit.getOnlinePlayers().forEach(player -> player.sendMessage(ChatColor.YELLOW + "[Suspended] " + cause));
+                causeList.add(cause);
             } else {
                 causeList.add(cause);
-                shutdownSequence(causeList);
+
+                //全員Deadになったらstop
+                if (allDead()) {
+                    shutdownSequence(causeList);
+                }
             }
         }
     }
 
-    private boolean isEveryoneInTheEnd() {
+    private boolean allDead() {
         for (Player player : Bukkit.getOnlinePlayers()) {
-            // Abort unless all players are in the end or dead
-            if (player.getWorld().getEnvironment() != World.Environment.THE_END) {
-                return false;
-            }
-        }
-        return true;
-    }
-
-    private boolean isEveryoneAlive() {
-        for (Player player : Bukkit.getOnlinePlayers()) {
-            // Abort unless all players are in the end or dead
-            if (player.getHealth() == 0) {
+            if (!player.getDisplayName().contains("Dead")) {
                 return false;
             }
         }
@@ -80,15 +75,15 @@ public final class Main extends JavaPlugin implements Listener {
 
     private void shutdownSequence(ArrayList<String> causes) {
 
-        String causeKickScreen = causes.toString();
+        String causeKickScreen = String.join("\n", causes);
         String causeLatest = causes.get(causes.size() - 1);
 
         Bukkit.getOnlinePlayers().forEach(player -> player.kickPlayer(ChatColor.RED + causeKickScreen));
-        if (causeKickScreen != null) {
-            getConfig().set("death-message", causeLatest);
-            Bukkit.getServer().setMotd(displayMotd);
-            saveConfig();
-        }
+
+        getConfig().set("death-message", causeLatest);
+        Bukkit.getServer().setMotd(displayMotd);
+        saveConfig();
+
         // stop
         Bukkit.shutdown();
     }
