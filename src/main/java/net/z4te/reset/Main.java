@@ -3,6 +3,8 @@ package net.z4te.reset;
 import net.md_5.bungee.api.ChatColor;
 import org.bukkit.Bukkit;
 
+import org.bukkit.World;
+import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.PlayerDeathEvent;
@@ -41,15 +43,34 @@ public final class Main extends JavaPlugin implements Listener {
 
         if (getServer().isHardcore()) {
             String cause = event.getDeathMessage();
-            Bukkit.getOnlinePlayers().forEach(player -> player.kickPlayer(ChatColor.RED + cause));
-            if (cause != null) {
-                getConfig().set("death-message", cause);
-                Bukkit.getServer().setMotd(displayMotd);
-                saveConfig();
+
+            if (suspend()){
+                Bukkit.broadcastMessage(ChatColor.YELLOW + "[Suspended] " + cause);
+            } else {
+                shutdownSequence(cause);
             }
-            // stop
-            Bukkit.shutdown();
         }
+    }
+
+    private boolean suspend() {
+        for (Player player : Bukkit.getOnlinePlayers()) {
+            // Abort unless all players are in the end.
+            if (player.getWorld().getEnvironment() != World.Environment.THE_END) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private void shutdownSequence(String cause) {
+        Bukkit.getOnlinePlayers().forEach(player -> player.kickPlayer(ChatColor.RED + cause));
+        if (cause != null) {
+            getConfig().set("death-message", cause);
+            Bukkit.getServer().setMotd(displayMotd);
+            saveConfig();
+        }
+        // stop
+        Bukkit.shutdown();
     }
 
 
