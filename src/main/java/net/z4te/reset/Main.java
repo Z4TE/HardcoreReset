@@ -25,7 +25,8 @@ public final class Main extends JavaPlugin implements Listener {
         // Plugin startup logic
 
         if (motd == null) {
-            Bukkit.getServer().setMotd(ChatColor.WHITE + "Edit motd in config.yml");
+            getConfig().addDefault("motd","Edit motd in config.yml");
+            getConfig().addDefault("death-message", "The most recent death message will appear here");
         } else {
             assert displayMotd != null;
             Bukkit.getServer().setMotd(displayMotd);
@@ -45,7 +46,7 @@ public final class Main extends JavaPlugin implements Listener {
         if (getServer().isHardcore()) {
             String cause = event.getDeathMessage();
 
-            // 死者がエンドにいた場合はstopしない
+            // エンドで死んだ場合はstopしない
             if (event.getEntity().getWorld().getEnvironment() == World.Environment.THE_END){
                 Bukkit.getOnlinePlayers().forEach(player -> player.sendMessage(ChatColor.YELLOW + "[Suspended] " + cause));
                 causeList.add(cause);
