@@ -3,10 +3,13 @@ package net.z4te.reset;
 import net.md_5.bungee.api.ChatColor;
 import org.bukkit.Bukkit;
 
+import org.bukkit.World;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.plugin.java.JavaPlugin;
+
+import java.util.ArrayList;
 
 
 public final class Main extends JavaPlugin implements Listener {
@@ -15,18 +18,19 @@ public final class Main extends JavaPlugin implements Listener {
     String deathMessage = getConfig().getString("death-message");
     String displayMotd = motd + deathMessage;
 
+    ArrayList<String> causeList = new ArrayList<>();
+
     @Override
     public void onEnable() {
         // Plugin startup logic
 
         if (motd == null) {
-            // Set the default motd
-            Bukkit.getServer().setMotd(ChatColor.WHITE + "Edit motd in config.yml");
+            getConfig().addDefault("motd","Edit motd in config.yml");
+            getConfig().addDefault("death-message", "The most recent death message will appear here");
         } else {
             assert displayMotd != null;
             Bukkit.getServer().setMotd(displayMotd);
         }
-
         getServer().getPluginManager().registerEvents(this, this);
     }
 
@@ -37,19 +41,35 @@ public final class Main extends JavaPlugin implements Listener {
 
     @EventHandler
     public void onPlayerDeath(PlayerDeathEvent event) {
-        // Execute when a player dies in hardcore mode
 
+        // プレイヤーがハードコアモードで死んだ場合に実行
         if (getServer().isHardcore()) {
             String cause = event.getDeathMessage();
-            Bukkit.getOnlinePlayers().forEach(player -> player.kickPlayer(ChatColor.RED + cause));
-            if (cause != null) {
-                getConfig().set("death-message", cause);
-                Bukkit.getServer().setMotd(displayMotd);
-                saveConfig();
+
+            // エンドで死んだ場合はstopしない
+            if (event.getEntity().getWorld().getEnvironment() == World.Environment.THE_END){
+                Bukkit.getOnlinePlayers().forEach(player -> player.sendMessage(ChatColor.YELLOW + "[Suspended] " + cause));
+                causeList.add(cause);
+            } else {
+                causeList.add(cause);
+                shutdownSequence(causeList);
             }
-            // stop
-            Bukkit.shutdown();
         }
+    }
+
+    private void shutdownSequence(ArrayList<String> causes) {
+
+        String causeKickScreen = String.join("\n", causes);
+        String causeLatest = causes.get(causes.size() - 1);
+
+        Bukkit.getOnlinePlayers().forEach(player -> player.kickPlayer(ChatColor.RED + causeKickScreen));
+
+        getConfig().set("death-message", causeLatest);
+        Bukkit.getServer().setMotd(displayMotd);
+        saveConfig();
+
+        // stop
+        Bukkit.shutdown();
     }
 
 
