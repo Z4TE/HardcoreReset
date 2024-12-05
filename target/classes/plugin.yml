@@ -2,3 +2,6 @@ name: Hardcore-Reset
 version: '1.0'
 main: net.z4te.reset.Main
 api-version: '1.21'
+commands:
+  poll:
+    description: 'If more than 2/3 of the online players agree, the server will be shut down'
