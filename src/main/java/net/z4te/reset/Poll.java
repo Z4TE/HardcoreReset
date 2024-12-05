@@ -53,7 +53,7 @@ public class Poll implements CommandExecutor {
                 TextComponent message = new TextComponent("");
 
                 TextComponent yes = new TextComponent("[YES]");
-                yes.setColor(ChatColor.DARK_GREEN);
+                yes.setColor(ChatColor.GREEN);
                 yes.setHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new ComponentBuilder("Click here to select YES").create()));
                 yes.setClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/vote yes"));
 
@@ -89,20 +89,33 @@ public class Poll implements CommandExecutor {
         int onlinePlayers = Bukkit.getOnlinePlayers().size();
         int requiredVotes = (int) Math.ceil((2.0 / 3.0) * onlinePlayers);
 
-        Bukkit.broadcastMessage("[YES] " + yes.size() + "/ [NO] : " + no.size());
+        TextComponent resultYes = new TextComponent("[Yes] " + yes.size());
+        TextComponent resultNo = new TextComponent("[No] " + no.size());
 
-        if (yes.size() >= requiredVotes) {
+        if (yes.size() > requiredVotes) {
+
+            resultYes.setColor(ChatColor.WHITE);
+            resultYes.setUnderlined(true);
+            resultNo.setColor(ChatColor.GRAY);
+
+            String result = resultYes + " > " + resultNo;
 
             String messageYes = ChatColor.YELLOW + "More than 2/3 of you have agreed to end the game. The server will be shut down.";
 
-            Bukkit.broadcastMessage(messageYes);
+            Bukkit.broadcastMessage(result + "\n" + messageYes);
             Main.gameOver = true;
             Bukkit.shutdown();
         }else {
 
+            resultYes.setColor(ChatColor.GRAY);
+            resultNo.setColor(ChatColor.WHITE);
+            resultNo.setUnderlined(true);
+
+            String result = resultYes + " < " + resultNo;
+
             String messageNo = ChatColor.YELLOW + "The server shutdown has been rejected.";
 
-            Bukkit.broadcastMessage(messageNo);
+            Bukkit.broadcastMessage(result + "\n" + messageNo);
         }
 
     }
