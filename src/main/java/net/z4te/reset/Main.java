@@ -10,9 +10,11 @@ import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.util.ArrayList;
+import java.util.Objects;
 
 
 public final class Main extends JavaPlugin implements Listener {
+    public static boolean gameOver = false;
 
     String motd = getConfig().getString("motd");
     String deathMessage = getConfig().getString("death-message");
@@ -32,11 +34,23 @@ public final class Main extends JavaPlugin implements Listener {
             Bukkit.getServer().setMotd(displayMotd);
         }
         getServer().getPluginManager().registerEvents(this, this);
+        Objects.requireNonNull(getCommand("poll")).setExecutor(new Poll());
     }
 
     @Override
     public void onDisable() {
         // Plugin shutdown logic
+
+        if (gameOver) {
+            String causeKickScreen = String.join("\n", causeList);
+            String causeLatest = causeList.get(causeList.size() - 1);
+
+            Bukkit.getOnlinePlayers().forEach(player -> player.kickPlayer(ChatColor.RED + causeKickScreen));
+
+            getConfig().set("death-message", causeLatest);
+            Bukkit.getServer().setMotd(displayMotd);
+            saveConfig();
+        }
     }
 
     @EventHandler
@@ -52,25 +66,9 @@ public final class Main extends JavaPlugin implements Listener {
                 causeList.add(cause);
             } else {
                 causeList.add(cause);
-                shutdownSequence(causeList);
+                gameOver = true;
+                Bukkit.shutdown();
             }
         }
     }
-
-    private void shutdownSequence(ArrayList<String> causes) {
-
-        String causeKickScreen = String.join("\n", causes);
-        String causeLatest = causes.get(causes.size() - 1);
-
-        Bukkit.getOnlinePlayers().forEach(player -> player.kickPlayer(ChatColor.RED + causeKickScreen));
-
-        getConfig().set("death-message", causeLatest);
-        Bukkit.getServer().setMotd(displayMotd);
-        saveConfig();
-
-        // stop
-        Bukkit.shutdown();
-    }
-
-
 }
